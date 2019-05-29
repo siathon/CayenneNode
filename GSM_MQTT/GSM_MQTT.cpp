@@ -10,9 +10,10 @@ extern DigitalOut simEn;
 extern DigitalOut simPower;
 string MQTT_HOST = "mqtt.mydevices.com";
 string MQTT_PORT = "1883";
-char* clientID = "ae767cc0-56de-11e9-898b-1503dc6ccc3b";
-char* username = "990606a0-4e2b-11e9-9622-9b9aeccba453";
-char* password = "763560d0aa760ffea41c3da7bf3d8dfdd9bf3a56";
+
+char* username = "abab39c0-7d28-11e9-94e9-493d67fd755e";
+char* password = "a595adda3859177e07b54dde57ae6cf1aa48a513";
+char* clientID = "7a891260-7d2b-11e9-9636-f9904f7b864b";
 
 extern TextLCD lcd;
 extern Watchdog wd;
@@ -21,6 +22,8 @@ extern RawSerial pc;
 extern void logError(int type);
 extern void updateChannelsLCD();
 extern void readSensors();
+extern void onMessage(int channel, string msgID, string value);
+extern int stringToInt(string str);
 Ticker pingTicker;
 Ticker simTicker;
 // void serialEvent();
@@ -298,14 +301,6 @@ string readTimeStamp(){
     return s;
 }
 
-int stringToInt(string str){
-    double t = 0;
-    int l = str.length();
-    for(int i = l-1; i >= 0; i--)
-        t += (str[i] - '0') * pow(10.0, l - i - 1);
-    return (int)t;
-}
-
 void tcpRx(){
     if (processingPacket) {
         return;
@@ -329,8 +324,6 @@ void checkSerial(){
         MQTT.MQTT_Flag = false;
         MQTT.TCP_Flag = false;
         MQTT.pingFlag = false;
-        lcd.locate(0, 1);
-        lcd.printf("GSM READY ");
         logError(-2);
         wait(4);
         return;
@@ -376,7 +369,7 @@ void checkSerial(){
 
 void GSM_MQTT::parsePacket(uint8_t ReceivedMessageType, uint8_t DUP, uint8_t QoS, uint8_t RETAIN){
     MQTT.printMessageType(ReceivedMessageType);
-    pc.printf(MQTT.inputString.c_str());
+    // pc.printf(MQTT.inputString.c_str());
     switch (ReceivedMessageType) {
         case CONNECT:{
             break;
@@ -413,7 +406,6 @@ void GSM_MQTT::parsePacket(uint8_t ReceivedMessageType, uint8_t DUP, uint8_t QoS
             break;
         }
         case PUBLISH:{
-            pc.printf("%d - %d - %d\n", DUP, QoS, RETAIN);
             while (true) {
                 int idx = MQTT.inputString.find('/');
                 if (idx == -1) {
@@ -421,16 +413,20 @@ void GSM_MQTT::parsePacket(uint8_t ReceivedMessageType, uint8_t DUP, uint8_t QoS
                 }
                 MQTT.inputString = MQTT.inputString.substr(idx+1);
             }
+            // pc.printf("%s\n", MQTT.inputString);
+            int ch = stringToInt(MQTT.inputString.substr(0, 1));
             int idx = MQTT.inputString.find(',');
             string msgID = MQTT.inputString.substr(0, idx);
-            string value = MQTT.inputString.substr(idx+1,1);
-            pc.printf("%s - %s\n", msgID.c_str(), value.c_str());
-            sprintf(MQTT.Topic, "v1/%s/things/%s/data/2", username, clientID);
-            sprintf(MQTT.Message, "%s", value);
-            MQTT.publish(0, 0, 0, MQTT._generateMessageID(), MQTT.Topic, MQTT.Message);
-            sprintf(MQTT.Topic, "v1/%s/things/%s/response", username, clientID);
-            sprintf(MQTT.Message, "ok,%s", msgID);
-            MQTT.publish(0, 0, 0, MQTT._generateMessageID(), MQTT.Topic, MQTT.Message);
+            string value = MQTT.inputString.substr(idx+1);
+            pc.printf("DUP: %d - QoS: %d - RETAIN: %d\n", DUP, QoS, RETAIN);
+            pc.printf("channel: %d - MSG ID: %s - Value: %s\n",ch, msgID.c_str(), value.c_str());
+            onMessage(ch, msgID, value);
+            // sprintf(MQTT.Topic, "v1/%s/things/%s/data/2", username, clientID);
+            // sprintf(MQTT.Message, "%s", value);
+            // MQTT.publish(0, 0, 0, MQTT._generateMessageID(), MQTT.Topic, MQTT.Message);
+            // sprintf(MQTT.Topic, "v1/%s/things/%s/response", username, clientID);
+            // sprintf(MQTT.Message, "ok,%s", msgID);
+            // MQTT.publish(0, 0, 0, MQTT._generateMessageID(), MQTT.Topic, MQTT.Message);
             switch (QoS) {
                 case 1:
                     publishACK(stringToInt(msgID));
@@ -442,6 +438,7 @@ void GSM_MQTT::parsePacket(uint8_t ReceivedMessageType, uint8_t DUP, uint8_t QoS
             break;
         }
         case PUBACK:{
+            MQTT.publishFailCount = 0;
             break;
         }
         case PUBREC:{
@@ -492,6 +489,7 @@ GSM_MQTT::GSM_MQTT(unsigned long KeepAlive){
     pingFlag = false;
     tcpATerrorcount = 0;
     pingFailCount = 0;
+    publishFailCount = 0;
     MQTT_Flag = false;
     PublishIndex = 0;
     TopicLength = 0;
@@ -688,8 +686,6 @@ void GSM_MQTT::_ping(void){
         MQTT.MQTT_Flag = false;
         MQTT.TCP_Flag = false;
         MQTT.pingFlag = false;
-        lcd.locate(0, 1);
-        lcd.printf("GSM READY ");
         logError(-1);
         wait(4);
         return;

@@ -20,18 +20,21 @@ DigitalOut simPower(PC_9);
 DigitalOut simEn(PB_7, 1);
 DigitalOut led0(PC_8);
 
-AnalogIn S0(PA_0);
-AnalogIn S1(PC_2);
-AnalogIn S2(PC_0);
-AnalogIn S3(PC_3);
-AnalogIn S4(PC_1);
-AnalogIn S5(PA_1);
+AnalogIn S0(PA_6);//PA_0
+AnalogIn S1(PC_1);//PC_2
+AnalogIn S2(PA_1);//PC_0
+AnalogIn S3(PC_0);//PA_1
+AnalogIn S4(PC_2);//PC_1
+AnalogIn S5(PA_0);//PC_3
 
 RawSerial sim(PA_9, PA_10, 9600);
 RawSerial pc(PA_2, PA_3, 9600);
 
 Watchdog wd;
+float rawSensorData[6];
 float sensorData[6];
+float sensorMin[6];
+float sensorMax[6];
 void GSM_MQTT::OnConnect(void){}
 
 GSM_MQTT MQTT(10);
@@ -43,4 +46,14 @@ const int PING_FAIL = -1;
 const int CONNECTION_CLOSED = -2;
 const int WATCHDOG = -3;
 int lcdSensorLine = 0;
+int activeSensor = 0;
 bool sdAvailable;
+int publishState = 0;
+
+int stringToInt(string str){
+    double t = 0;
+    int l = str.length();
+    for(int i = l-1; i >= 0; i--)
+        t += (str[i] - '0') * pow(10.0, l - i - 1);
+    return (int)t;
+}

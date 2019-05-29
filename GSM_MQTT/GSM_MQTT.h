@@ -52,6 +52,7 @@ public:
     char reply[10];
     bool pingFlag;
     int pingFailCount;
+    int publishFailCount;
     char tcpATerrorcount;
     bool MQTT_Flag;
     int ConnectionAcknowledgement;
