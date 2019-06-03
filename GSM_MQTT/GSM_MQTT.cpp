@@ -415,6 +415,7 @@ void GSM_MQTT::parsePacket(uint8_t ReceivedMessageType, uint8_t DUP, uint8_t QoS
             }
             // pc.printf("%s\n", MQTT.inputString);
             int ch = stringToInt(MQTT.inputString.substr(0, 1));
+            MQTT.inputString = MQTT.inputString.substr(1);
             int idx = MQTT.inputString.find(',');
             string msgID = MQTT.inputString.substr(0, idx);
             string value = MQTT.inputString.substr(idx+1);

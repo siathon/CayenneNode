@@ -260,3 +260,4 @@ BUILD\NUCLEO_F103RB\ARM\main.o: ./mbed-os/features/storage/filesystem/fat/ChaN/f
 BUILD\NUCLEO_F103RB\ARM\main.o: ./mbed-os/features/storage/filesystem/fat/ChaN/integer.h
 BUILD\NUCLEO_F103RB\ARM\main.o: ./mbed-os/features/storage/filesystem/fat/ChaN/ffconf.h
 BUILD\NUCLEO_F103RB\ARM\main.o: ./TextLCD/TextLCD.h
+BUILD\NUCLEO_F103RB\ARM\main.o: ./DHT/DHT.h

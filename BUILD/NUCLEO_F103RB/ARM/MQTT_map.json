@@ -1,5 +1,16 @@
 [
     {
+        "module": "DHT\\DHT.o", 
+        "size": {
+            ".data-delta": 0, 
+            ".text-delta": 0, 
+            ".bss": 0, 
+            ".data": 0, 
+            ".bss-delta": 0, 
+            ".text": 748
+        }
+    }, 
+    {
         "module": "GSM_MQTT\\GSM_MQTT.o", 
         "size": {
             ".data-delta": 0, 
@@ -7,7 +18,7 @@
             ".bss": 428, 
             ".data": 60, 
             ".bss-delta": 0, 
-            ".text": 10245
+            ".text": 10273
         }
     }, 
     {
@@ -40,7 +51,7 @@
             ".bss": 434, 
             ".data": 48, 
             ".bss-delta": 0, 
-            ".text": 21000
+            ".text": 21164
         }
     }, 
     {
@@ -73,7 +84,7 @@
             ".bss": 0, 
             ".data": 0, 
             ".bss-delta": 0, 
-            ".text": 4616
+            ".text": 5052
         }
     }, 
     {
@@ -84,7 +95,7 @@
             ".bss": 0, 
             ".data": 0, 
             ".bss-delta": 0, 
-            ".text": 3442
+            ".text": 3704
         }
     }, 
     {
@@ -103,10 +114,10 @@
         "size": {
             ".data-delta": 0, 
             ".text-delta": 0, 
-            ".bss": 2188, 
-            ".data": 16, 
+            ".bss": 2328, 
+            ".data": 156, 
             ".bss-delta": 0, 
-            ".text": 5536
+            ".text": 8184
         }
     }, 
     {
@@ -172,7 +183,7 @@
             ".bss": 64, 
             ".data": 6, 
             ".bss-delta": 0, 
-            ".text": 2018
+            ".text": 2058
         }
     }, 
     {
@@ -210,10 +221,10 @@
     }, 
     {
         "summary": {
-            "static_ram": 11694, 
+            "static_ram": 11974, 
             "total_flash_delta": 0, 
             "static_ram_delta": 0, 
-            "total_flash": 119607
+            "total_flash": 124073
         }
     }
 ]
