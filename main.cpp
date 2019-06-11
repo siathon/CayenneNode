@@ -43,7 +43,7 @@ void readSensors(){
     if (dth.readData() == ERROR_NONE) {
         hmd = dth.ReadHumidity();
         tmp = dth.ReadTemperature(CELCIUS);
-        // pc.printf("humidity = %2.2f - temp = %2.2f\n", hmd, tmp);
+        pc.printf("humidity = %2.2f - temp = %2.2f\n", hmd, tmp);
     }
 }
 
@@ -132,15 +132,16 @@ void initSD(){
 
 void writeSensorDataToSD(){
     if (!sdAvailable) {
+        pc.printf("SD not available!\n");
         return;
     }
     pc.printf("Opening data file...");
     FILE *f = fopen("/fs/data.csv", "a");
     if (!f) {
-        pc.printf("Failed!\r\n");
+        pc.printf("Failed!\n");
     }
     else{
-        pc.printf("Done\r\n");
+        pc.printf("Done\n");
     }
     time_t seconds = time(NULL);
     char tm[20];
@@ -251,9 +252,12 @@ void updateChannelsLCD(){
             }
             break;
         }
+        case 3:{
+            lcd.printf("TEMP:%02d HMD:%3.1f", (int)tmp, hmd);
+        }
     }
     lcdSensorLine++;
-    if (lcdSensorLine == 3) {
+    if (lcdSensorLine == 4) {
         lcdSensorLine = 0;
     }
     if (MQTT.available()) {
@@ -273,6 +277,48 @@ void updateChannelsLCD(){
     lcd.printf("%3d%%", battery);
 }
 
+void writefile(char* filename, float value) {
+    if (!sdAvailable) {
+        pc.printf("SD not available!\n");
+        return;
+    }
+    char temp[25];
+    sprintf(temp, "/fs/setting/%s.txt", filename);
+    pc.printf("Opening file %s...", temp);
+    FILE *f = fopen(temp, "w");
+    if (!f) {
+        pc.printf("Failed\n");
+    }
+    else {
+        pc.printf("Done\n");
+    }
+    pc.printf("Write %f to %s\n", value, filename);
+    fprintf(f, "%.2f", value);
+    fclose(f);
+}
+
+float readfile(char* filename){
+    if (!sdAvailable) {
+        pc.printf("SD not available!\n");
+        return -1.0;
+    }
+    char temp[25];
+    sprintf(temp, "/fs/setting/%s.txt", filename);
+    pc.printf("Opening file %s...", temp);
+    FILE *f = fopen(temp, "r");
+    if (!f) {
+        pc.printf("Failed\n");
+    }
+    else {
+        pc.printf("Done\n");
+    }
+    float value;
+    fscanf(f, "%f", &value);
+    pc.printf("read %.2f from %s\n", value, temp);
+    fclose(f);
+    return value;
+}
+
 void onMessage(int channel, string msgID, string value){
     switch (channel) {
         wd.Service();
@@ -289,6 +335,9 @@ void onMessage(int channel, string msgID, string value){
             float f = atof(value.c_str());
             pc.printf("channel %d min = %f\n", activeSensor, f);
             mn[activeSensor - 1] = f;
+            char temp[10];
+            sprintf(temp, "lo_ch%d", activeSensor);
+            writefile(temp, f);
             break;
         }
         case 2:{
@@ -304,6 +353,9 @@ void onMessage(int channel, string msgID, string value){
             float f = atof(value.c_str());
             pc.printf("channel %d max = %f\n", activeSensor, f);
             mx[activeSensor - 1] = f;
+            char temp[10];
+            sprintf(temp, "hi_ch%d", activeSensor);
+            writefile(temp, f);
             break;
         }
         case 9:{
@@ -343,6 +395,9 @@ void onMessage(int channel, string msgID, string value){
             MQTT.publish(0, 0, 0, MQTT._generateMessageID(), MQTT.Topic, MQTT.Message);
             readSensors();
             sensorMin[activeSensor - 1] = rawSensorData[activeSensor - 1] - 0.001;
+            char temp[10];
+            sprintf(temp, "min_ch%d", activeSensor);
+            writefile(temp, sensorMin[activeSensor - 1]);
             pc.printf("Set channel %d minimum = %2.2f\n", activeSensor, rawSensorData[activeSensor - 1]);
             sprintf(MQTT.Topic, "v1/%s/things/%s/data/7", username, clientID);
             sprintf(MQTT.Message, "%s", "0");
@@ -365,6 +420,9 @@ void onMessage(int channel, string msgID, string value){
             MQTT.publish(0, 0, 0, MQTT._generateMessageID(), MQTT.Topic, MQTT.Message);
             readSensors();
             sensorMax[activeSensor - 1] = rawSensorData[activeSensor - 1] + 0.001;
+            char temp[10];
+            sprintf(temp, "max_ch%d", activeSensor);
+            writefile(temp, sensorMax[activeSensor - 1]);
             pc.printf("Set channel %d maximum = %2.2f\n", activeSensor, rawSensorData[activeSensor - 1]);
             sprintf(MQTT.Topic, "v1/%s/things/%s/data/8", username, clientID);
             sprintf(MQTT.Message, "%s", "0");
@@ -402,9 +460,28 @@ void publishMinMax() {
     }
 }
 
+void readSetting(){
+    for (size_t i = 0; i < 6; i++) {
+        char temp[10];
+        sprintf(temp, "min_ch%d", i+1);
+        sensorMin[i] = readfile(temp);
+
+        sprintf(temp, "max_ch%d", i+1);
+        sensorMax[i] = readfile(temp);
+
+        sprintf(temp, "hi_ch%d", i+1);
+        mn[i] = readfile(temp);
+
+        sprintf(temp, "lo_ch%d", i+1);
+        mx[i] = readfile(temp);
+    }
+}
+
 int main() {
     lcd.cls();
     initSD();
+
+
     if (wd.WatchdogCausedReset()) {
         logError(WATCHDOG);
     }
@@ -412,6 +489,7 @@ int main() {
     checkBattery();
     readSensors();
     updateChannelsLCD();
+    readSetting();
     MQTT.begin();
     wd.Configured(3);
     wd.Service();

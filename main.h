@@ -14,7 +14,7 @@ TextLCD lcd(PC_6, PC_4, PA_8, PA_7, PB_15, PB_13);
 SDBlockDevice sd(PB_5, PB_4, PB_3, PC_7);
 FATFileSystem fs("fs");
 
-DHT dth(PB_6, DHT22);
+DHT dth(PC_3, DHT22);
 
 using namespace std;
 
